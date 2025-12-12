@@ -121,15 +121,53 @@ func (i *Indexer) getStartBlock(ctx context.Context) (int64, error) {
 	}
 
 	if lastBlock > 0 {
+		if err := i.verifyCheckpointHash(ctx, lastBlock); err != nil {
+			i.logger.Warn("checkpoint hash verification failed, will re-index from confirmed block",
+				zap.Int64("checkpoint_block", lastBlock),
+				zap.Error(err))
+			metrics.CheckpointHashMismatch.WithLabelValues(i.chainName, IndexerName).Inc()
+			return i.getFallbackStartBlock(ctx)
+		}
 		return lastBlock + 1, nil
 	}
 
+	return i.getFallbackStartBlock(ctx)
+}
+
+func (i *Indexer) getFallbackStartBlock(ctx context.Context) (int64, error) {
 	confirmedBlock, err := i.ethClient.GetConfirmedBlockNumber(ctx, i.cfg.Chain.ConfirmationDepth)
 	if err != nil {
 		return 0, err
 	}
-
 	return confirmedBlock, nil
+}
+
+func (i *Indexer) verifyCheckpointHash(ctx context.Context, blockNumber int64) error {
+	savedHash, err := i.checkpoint.GetLastBlockHash(ctx, IndexerName, i.chainName)
+	if err != nil {
+		return fmt.Errorf("failed to get checkpoint hash: %w", err)
+	}
+
+	if savedHash == "" {
+		return nil
+	}
+
+	blockHeader, err := i.ethClient.HeaderByNumber(ctx, big.NewInt(blockNumber))
+	if err != nil {
+		return fmt.Errorf("failed to get block header from chain: %w", err)
+	}
+
+	chainHash := blockHeader.Hash().Hex()
+	if savedHash != chainHash {
+		metrics.ChainReorgDetected.WithLabelValues(i.chainName, IndexerName, "startup").Inc()
+		return fmt.Errorf("hash mismatch: checkpoint=%s, chain=%s", savedHash, chainHash)
+	}
+
+	i.logger.Info("checkpoint hash verified",
+		zap.Int64("block", blockNumber),
+		zap.String("hash", chainHash))
+
+	return nil
 }
 
 func (i *Indexer) processBlockRange(ctx context.Context, startBlock, endBlock int64) error {
@@ -188,7 +226,13 @@ func (i *Indexer) processBlockRange(ctx context.Context, startBlock, endBlock in
 		}
 	}
 
-	if err := i.checkpoint.UpdateBlockNumber(ctx, IndexerName, i.chainName, endBlock, ""); err != nil {
+	endBlockHeader, err := i.ethClient.HeaderByNumber(ctx, big.NewInt(endBlock))
+	if err != nil {
+		return fmt.Errorf("failed to get end block header: %w", err)
+	}
+	endBlockHash := endBlockHeader.Hash().Hex()
+
+	if err := i.checkpoint.UpdateBlockNumber(ctx, IndexerName, i.chainName, endBlock, endBlockHash); err != nil {
 		i.logger.Warn("failed to update checkpoint", zap.Error(err))
 	}
 	metrics.CheckpointUpdates.WithLabelValues(i.chainName, IndexerName).Inc()

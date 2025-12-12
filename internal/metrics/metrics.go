@@ -143,4 +143,31 @@ var (
 		},
 		[]string{"chain", "indexer", "operation"},
 	)
+
+	ChainReorgDetected = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "indexer",
+			Name:      "chain_reorg_detected_total",
+			Help:      "Total number of chain reorganizations detected",
+		},
+		[]string{"chain", "indexer", "type"},
+	)
+
+	CheckpointHashMismatch = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "indexer",
+			Name:      "checkpoint_hash_mismatch_total",
+			Help:      "Total number of checkpoint hash mismatches on startup",
+		},
+		[]string{"chain", "indexer"},
+	)
+
+	ParentHashMismatch = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "indexer",
+			Name:      "parent_hash_mismatch_total",
+			Help:      "Total number of parent hash mismatches during indexing",
+		},
+		[]string{"chain", "indexer"},
+	)
 )

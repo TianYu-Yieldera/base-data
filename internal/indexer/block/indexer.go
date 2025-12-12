@@ -22,12 +22,13 @@ const (
 )
 
 type Indexer struct {
-	cfg        *config.Config
-	ethClient  *ethereum.Client
-	producer   *kafka.Producer
-	checkpoint *checkpoint.Manager
-	logger     *zap.Logger
-	chainName  string
+	cfg           *config.Config
+	ethClient     *ethereum.Client
+	producer      *kafka.Producer
+	checkpoint    *checkpoint.Manager
+	logger        *zap.Logger
+	chainName     string
+	lastBlockHash string
 }
 
 func NewIndexer(
@@ -111,15 +112,54 @@ func (i *Indexer) getStartBlock(ctx context.Context) (int64, error) {
 	}
 
 	if lastBlock > 0 {
+		if err := i.verifyCheckpointHash(ctx, lastBlock); err != nil {
+			i.logger.Warn("checkpoint hash verification failed, will re-index from confirmed block",
+				zap.Int64("checkpoint_block", lastBlock),
+				zap.Error(err))
+			metrics.CheckpointHashMismatch.WithLabelValues(i.chainName, IndexerName).Inc()
+			return i.getFallbackStartBlock(ctx)
+		}
 		return lastBlock + 1, nil
 	}
 
+	return i.getFallbackStartBlock(ctx)
+}
+
+func (i *Indexer) getFallbackStartBlock(ctx context.Context) (int64, error) {
 	confirmedBlock, err := i.ethClient.GetConfirmedBlockNumber(ctx, i.cfg.Chain.ConfirmationDepth)
 	if err != nil {
 		return 0, err
 	}
-
 	return confirmedBlock, nil
+}
+
+func (i *Indexer) verifyCheckpointHash(ctx context.Context, blockNumber int64) error {
+	savedHash, err := i.checkpoint.GetLastBlockHash(ctx, IndexerName, i.chainName)
+	if err != nil {
+		return fmt.Errorf("failed to get checkpoint hash: %w", err)
+	}
+
+	if savedHash == "" {
+		return nil
+	}
+
+	block, err := i.ethClient.BlockByNumber(ctx, big.NewInt(blockNumber))
+	if err != nil {
+		return fmt.Errorf("failed to get block from chain: %w", err)
+	}
+
+	chainHash := block.Hash().Hex()
+	if savedHash != chainHash {
+		metrics.ChainReorgDetected.WithLabelValues(i.chainName, IndexerName, "startup").Inc()
+		return fmt.Errorf("hash mismatch: checkpoint=%s, chain=%s", savedHash, chainHash)
+	}
+
+	i.lastBlockHash = chainHash
+	i.logger.Info("checkpoint hash verified",
+		zap.Int64("block", blockNumber),
+		zap.String("hash", chainHash))
+
+	return nil
 }
 
 func (i *Indexer) processBlockRange(ctx context.Context, startBlock, endBlock int64) error {
@@ -134,11 +174,24 @@ func (i *Indexer) processBlockRange(ctx context.Context, startBlock, endBlock in
 			return fmt.Errorf("failed to get block %d: %w", blockNum, err)
 		}
 
+		if err := i.verifyParentHash(block); err != nil {
+			metrics.ParentHashMismatch.WithLabelValues(i.chainName, IndexerName).Inc()
+			metrics.ChainReorgDetected.WithLabelValues(i.chainName, IndexerName, "parent_mismatch").Inc()
+			i.logger.Error("parent hash mismatch detected",
+				zap.Int64("block", blockNum),
+				zap.String("expected_parent", i.lastBlockHash),
+				zap.String("actual_parent", block.ParentHash().Hex()),
+				zap.Error(err))
+			return err
+		}
+
 		blockMsg := i.convertBlock(block)
 
 		if err := i.producer.Send(ctx, i.cfg.Kafka.Topics.Blocks, blockMsg.BlockHash, blockMsg); err != nil {
 			return fmt.Errorf("failed to send block %d to kafka: %w", blockNum, err)
 		}
+
+		i.lastBlockHash = blockMsg.BlockHash
 
 		metrics.BlocksProcessed.WithLabelValues(i.chainName, IndexerName).Inc()
 		metrics.LastBlockNumber.WithLabelValues(i.chainName, IndexerName).Set(float64(blockNum))
@@ -154,6 +207,19 @@ func (i *Indexer) processBlockRange(ctx context.Context, startBlock, endBlock in
 		zap.Int64("start", startBlock),
 		zap.Int64("end", endBlock),
 		zap.Duration("duration", time.Since(start)))
+
+	return nil
+}
+
+func (i *Indexer) verifyParentHash(block *types.Block) error {
+	if i.lastBlockHash == "" {
+		return nil
+	}
+
+	parentHash := block.ParentHash().Hex()
+	if parentHash != i.lastBlockHash {
+		return fmt.Errorf("parent hash mismatch: expected %s, got %s", i.lastBlockHash, parentHash)
+	}
 
 	return nil
 }

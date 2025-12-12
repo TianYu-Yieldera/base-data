@@ -155,3 +155,29 @@ func (m *Manager) List(ctx context.Context) ([]*Checkpoint, error) {
 
 	return checkpoints, nil
 }
+
+func (m *Manager) GetLastBlockHash(ctx context.Context, indexerName, chain string) (string, error) {
+	cp, err := m.Get(ctx, indexerName, chain)
+	if err != nil {
+		return "", err
+	}
+
+	if cp == nil {
+		return "", nil
+	}
+
+	return cp.LastBlockHash, nil
+}
+
+func (m *Manager) Invalidate(ctx context.Context, indexerName, chain string) error {
+	m.mu.Lock()
+	cacheKey := m.key(indexerName, chain)
+	delete(m.cache, cacheKey)
+	m.mu.Unlock()
+
+	m.logger.Warn("checkpoint invalidated due to chain mismatch",
+		zap.String("indexer", indexerName),
+		zap.String("chain", chain))
+
+	return nil
+}
