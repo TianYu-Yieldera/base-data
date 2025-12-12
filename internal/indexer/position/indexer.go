@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/TianYu-Yieldera/base-data/internal/config"
-	"github.com/TianYu-Yieldera/base-data/internal/ethereum"
+	internaleth "github.com/TianYu-Yieldera/base-data/internal/ethereum"
 	"github.com/TianYu-Yieldera/base-data/internal/kafka"
 	"github.com/TianYu-Yieldera/base-data/internal/metrics"
 	"github.com/TianYu-Yieldera/base-data/pkg/models"
@@ -32,7 +33,7 @@ var getUserAccountDataSelector = ethcommon.HexToHash("0xbf92857c")
 
 type Indexer struct {
 	cfg       *config.Config
-	ethClient *ethereum.Client
+	ethClient *internaleth.Client
 	producer  *kafka.Producer
 	logger    *zap.Logger
 	chainName string
@@ -44,7 +45,7 @@ type Indexer struct {
 
 func NewIndexer(
 	cfg *config.Config,
-	ethClient *ethereum.Client,
+	ethClient *internaleth.Client,
 	producer *kafka.Producer,
 	logger *zap.Logger,
 ) *Indexer {
@@ -208,10 +209,7 @@ func (i *Indexer) getUserAccountData(ctx context.Context, address string, blockN
 	copy(data[0:4], getUserAccountDataSelector.Bytes()[:4])
 	copy(data[16:36], userAddr.Bytes())
 
-	callMsg := struct {
-		To   *ethcommon.Address
-		Data []byte
-	}{
+	callMsg := ethereum.CallMsg{
 		To:   &poolAddr,
 		Data: data,
 	}

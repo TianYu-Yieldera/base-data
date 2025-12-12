@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
@@ -12,7 +13,7 @@ import (
 	"github.com/TianYu-Yieldera/base-data/internal/checkpoint"
 	"github.com/TianYu-Yieldera/base-data/internal/config"
 	"github.com/TianYu-Yieldera/base-data/internal/decoder"
-	"github.com/TianYu-Yieldera/base-data/internal/ethereum"
+	ethclient "github.com/TianYu-Yieldera/base-data/internal/ethereum"
 	"github.com/TianYu-Yieldera/base-data/internal/kafka"
 	"github.com/TianYu-Yieldera/base-data/internal/metrics"
 	"github.com/TianYu-Yieldera/base-data/pkg/models"
@@ -25,7 +26,7 @@ const (
 
 type Indexer struct {
 	cfg        *config.Config
-	ethClient  *ethereum.Client
+	ethClient  *ethclient.Client
 	producer   *kafka.Producer
 	checkpoint *checkpoint.Manager
 	decoder    *decoder.Decoder
@@ -35,7 +36,7 @@ type Indexer struct {
 
 func NewIndexer(
 	cfg *config.Config,
-	ethClient *ethereum.Client,
+	ethClient *ethclient.Client,
 	producer *kafka.Producer,
 	checkpointMgr *checkpoint.Manager,
 	logger *zap.Logger,
@@ -397,21 +398,4 @@ func (i *Indexer) processTransferEvent(ctx context.Context, log types.Log) error
 
 func strPtr(s string) *string {
 	return &s
-}
-
-var big = struct {
-	NewInt func(int64) interface{}
-}{
-	NewInt: func(x int64) interface{} {
-		return new(bigInt).SetInt64(x)
-	},
-}
-
-type bigInt struct {
-	val int64
-}
-
-func (b *bigInt) SetInt64(x int64) *bigInt {
-	b.val = x
-	return b
 }

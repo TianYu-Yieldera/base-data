@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/TianYu-Yieldera/base-data/internal/checkpoint"
 	"github.com/TianYu-Yieldera/base-data/internal/config"
 	"github.com/TianYu-Yieldera/base-data/internal/ethereum"
@@ -156,36 +158,24 @@ func (i *Indexer) processBlockRange(ctx context.Context, startBlock, endBlock in
 	return nil
 }
 
-func (i *Indexer) convertBlock(block interface{}) *models.Block {
-	b := block.(interface {
-		Number() *big.Int
-		Hash() interface{ Hex() string }
-		ParentHash() interface{ Hex() string }
-		Time() uint64
-		Transactions() interface{ Len() int }
-		GasUsed() uint64
-		GasLimit() uint64
-		BaseFee() *big.Int
-		Coinbase() interface{ Hex() string }
-	})
-
+func (i *Indexer) convertBlock(block *types.Block) *models.Block {
 	var baseFee *string
-	if b.BaseFee() != nil {
-		fee := b.BaseFee().String()
+	if block.BaseFee() != nil {
+		fee := block.BaseFee().String()
 		baseFee = &fee
 	}
 
 	return &models.Block{
 		ChainID:       i.cfg.Chain.ChainID,
-		BlockNumber:   b.Number().Int64(),
-		BlockHash:     b.Hash().Hex(),
-		ParentHash:    b.ParentHash().Hex(),
-		Timestamp:     time.Unix(int64(b.Time()), 0).UTC(),
-		TxCount:       int32(b.Transactions().Len()),
-		GasUsed:       int64(b.GasUsed()),
-		GasLimit:      int64(b.GasLimit()),
+		BlockNumber:   block.Number().Int64(),
+		BlockHash:     block.Hash().Hex(),
+		ParentHash:    block.ParentHash().Hex(),
+		Timestamp:     time.Unix(int64(block.Time()), 0).UTC(),
+		TxCount:       int32(block.Transactions().Len()),
+		GasUsed:       int64(block.GasUsed()),
+		GasLimit:      int64(block.GasLimit()),
 		BaseFeePerGas: baseFee,
-		Miner:         b.Coinbase().Hex(),
+		Miner:         block.Coinbase().Hex(),
 		IndexedAt:     time.Now().UTC(),
 	}
 }
