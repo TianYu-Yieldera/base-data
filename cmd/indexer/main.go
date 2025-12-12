@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	logger := initLogger(*logLevel)
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	cfg, err := config.Load(*configPath)
 	if err != nil {
@@ -99,7 +99,7 @@ func main() {
 			mux.Handle(cfg.Metrics.Path, promhttp.Handler())
 			mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
+				_, _ = w.Write([]byte("OK"))
 			})
 
 			addr := fmt.Sprintf(":%d", cfg.Metrics.Port)
