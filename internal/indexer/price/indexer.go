@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/TianYu-Yieldera/base-data/internal/config"
-	"github.com/TianYu-Yieldera/base-data/internal/ethereum"
+	internaleth "github.com/TianYu-Yieldera/base-data/internal/ethereum"
 	"github.com/TianYu-Yieldera/base-data/internal/kafka"
 	"github.com/TianYu-Yieldera/base-data/internal/metrics"
 	"github.com/TianYu-Yieldera/base-data/pkg/models"
@@ -34,7 +35,7 @@ type PriceFeed struct {
 
 type Indexer struct {
 	cfg       *config.Config
-	ethClient *ethereum.Client
+	ethClient *internaleth.Client
 	producer  *kafka.Producer
 	logger    *zap.Logger
 	chainName string
@@ -46,7 +47,7 @@ type Indexer struct {
 
 func NewIndexer(
 	cfg *config.Config,
-	ethClient *ethereum.Client,
+	ethClient *internaleth.Client,
 	producer *kafka.Producer,
 	logger *zap.Logger,
 ) *Indexer {
@@ -122,10 +123,7 @@ func (i *Indexer) pollPrices(ctx context.Context) {
 func (i *Indexer) fetchPrice(ctx context.Context, feed PriceFeed, blockNumber int64) (*models.AssetPrice, error) {
 	feedAddr := ethcommon.HexToAddress(feed.Address)
 
-	callMsg := struct {
-		To   *ethcommon.Address
-		Data []byte
-	}{
+	callMsg := ethereum.CallMsg{
 		To:   &feedAddr,
 		Data: latestRoundDataSelector.Bytes()[:4],
 	}

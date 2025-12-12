@@ -97,6 +97,9 @@ func (d *Decoder) DecodeAaveSupply(log types.Log) (*AaveSupply, error) {
 
 	event.Reserve = common.BytesToAddress(log.Topics[1].Bytes())
 	event.OnBehalfOf = common.BytesToAddress(log.Topics[2].Bytes())
+	if len(log.Topics) > 3 {
+		event.ReferralCode = uint16(new(big.Int).SetBytes(log.Topics[3].Bytes()).Uint64())
+	}
 
 	return event, nil
 }
@@ -141,6 +144,9 @@ func (d *Decoder) DecodeAaveBorrow(log types.Log) (*AaveBorrow, error) {
 
 	event.Reserve = common.BytesToAddress(log.Topics[1].Bytes())
 	event.OnBehalfOf = common.BytesToAddress(log.Topics[2].Bytes())
+	if len(log.Topics) > 3 {
+		event.ReferralCode = uint16(new(big.Int).SetBytes(log.Topics[3].Bytes()).Uint64())
+	}
 
 	return event, nil
 }
@@ -210,6 +216,9 @@ func (d *Decoder) DecodeAaveFlashLoan(log types.Log) (*AaveFlashLoan, error) {
 
 	event.Target = common.BytesToAddress(log.Topics[1].Bytes())
 	event.Asset = common.BytesToAddress(log.Topics[2].Bytes())
+	if len(log.Topics) > 3 {
+		event.ReferralCode = uint16(new(big.Int).SetBytes(log.Topics[3].Bytes()).Uint64())
+	}
 
 	return event, nil
 }
