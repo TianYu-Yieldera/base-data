@@ -182,6 +182,111 @@ services:
       schema-registry:
         condition: service_healthy
 
+  # Phase 2: Kafka Connect Cluster
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:7.5.0
+    hostname: kafka-connect
+    container_name: base-data-kafka-connect
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: base-data-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.apache.kafka.connect.runtime.rest=WARN,org.reflections=ERROR
+    volumes:
+      - ./connect-plugins:/usr/share/confluent-hub-components
+      - ./connect-config:/etc/kafka-connect
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing ClickHouse Sink Connector..."
+        confluent-hub install --no-prompt clickhouse/clickhouse-kafka-connect:latest
+        echo "Starting Kafka Connect..."
+        /etc/confluent/docker/run
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/connectors"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Phase 2: Flink JobManager
+  flink-jobmanager:
+    image: flink:1.17-scala_2.12-java11
+    hostname: flink-jobmanager
+    container_name: base-data-flink-jobmanager
+    ports:
+      - "8084:8081"
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        state.backend: rocksdb
+        state.checkpoints.dir: file:///opt/flink/checkpoints
+        state.savepoints.dir: file:///opt/flink/savepoints
+        execution.checkpointing.interval: 60000
+        execution.checkpointing.mode: EXACTLY_ONCE
+        execution.checkpointing.min-pause: 500
+        execution.checkpointing.timeout: 600000
+        restart-strategy: fixed-delay
+        restart-strategy.fixed-delay.attempts: 3
+        restart-strategy.fixed-delay.delay: 10s
+    volumes:
+      - flink-checkpoints:/opt/flink/checkpoints
+      - flink-savepoints:/opt/flink/savepoints
+      - ./flink-jobs:/opt/flink/usrlib
+    command: jobmanager
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/overview"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Phase 2: Flink TaskManager
+  flink-taskmanager:
+    image: flink:1.17-scala_2.12-java11
+    hostname: flink-taskmanager
+    container_name: base-data-flink-taskmanager
+    depends_on:
+      - flink-jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 4
+        taskmanager.memory.process.size: 4096m
+        state.backend: rocksdb
+        state.checkpoints.dir: file:///opt/flink/checkpoints
+        state.savepoints.dir: file:///opt/flink/savepoints
+    volumes:
+      - flink-checkpoints:/opt/flink/checkpoints
+      - flink-savepoints:/opt/flink/savepoints
+      - ./flink-jobs:/opt/flink/usrlib
+    command: taskmanager
+    deploy:
+      replicas: 2
+
 volumes:
   zookeeper-data:
   zookeeper-logs:
@@ -191,6 +296,8 @@ volumes:
   redis-data:
   prometheus-data:
   grafana-data:
+  flink-checkpoints:
+  flink-savepoints:
 
 networks:
   default:

@@ -1,0 +1,34 @@
+{
+  "name": "clickhouse-sink-prices",
+  "config": {
+    "connector.class": "com.clickhouse.kafka.connect.ClickHouseSinkConnector",
+    "tasks.max": "1",
+    "topics": "market.prices",
+    "hostname": "clickhouse",
+    "port": "8123",
+    "database": "base_data",
+    "username": "default",
+    "password": "",
+    "ssl": "false",
+
+    "table": "raw_market_prices",
+    "insert.format": "JSONEachRow",
+
+    "batch.size": "1000",
+    "batch.timeout.ms": "2000",
+    "retry.count": "3",
+    "retry.delay.ms": "1000",
+
+    "exactlyOnce": "true",
+    "deduplication.window.seconds": "300",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "base.dlq.prices",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true"
+  }
+}

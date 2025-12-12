@@ -1,0 +1,39 @@
+{
+  "name": "clickhouse-sink-aave-events",
+  "config": {
+    "connector.class": "com.clickhouse.kafka.connect.ClickHouseSinkConnector",
+    "tasks.max": "4",
+    "topics": "base.aave.supply,base.aave.withdraw,base.aave.borrow,base.aave.repay,base.aave.liquidation",
+    "hostname": "clickhouse",
+    "port": "8123",
+    "database": "base_data",
+    "username": "default",
+    "password": "",
+    "ssl": "false",
+
+    "table": "raw_base_aave_events",
+    "insert.format": "JSONEachRow",
+
+    "batch.size": "5000",
+    "batch.timeout.ms": "3000",
+    "retry.count": "3",
+    "retry.delay.ms": "1000",
+
+    "exactlyOnce": "true",
+    "deduplication.window.seconds": "600",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "base.dlq.aave-events",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true",
+
+    "transforms": "InsertField",
+    "transforms.InsertField.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.InsertField.partition.field": "kafka_partition",
+    "transforms.InsertField.offset.field": "kafka_offset"
+  }
+}

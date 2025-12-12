@@ -1,0 +1,12 @@
+# Build artifacts
+target/
+project/target/
+project/project/target/
+
+# IDE
+.idea/
+*.iml
+.bsp/
+
+# Logs
+*.log

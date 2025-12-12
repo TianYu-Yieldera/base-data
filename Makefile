@@ -1,10 +1,11 @@
-.PHONY: all build test lint clean docker-up docker-down init-db run
+.PHONY: all build test lint clean docker-up docker-down init-db run flink-build flink-test deploy-connectors
 
 GO := go
 GOFLAGS := -v
 BINARY_DIR := bin
 INDEXER_BINARY := $(BINARY_DIR)/indexer
 API_BINARY := $(BINARY_DIR)/api
+FLINK_DIR := flink-jobs
 
 all: lint test build
 
@@ -83,3 +84,50 @@ help:
 	@echo "  init-db       - Initialize database schemas"
 	@echo "  run           - Run the indexer locally"
 	@echo "  deps          - Download and tidy dependencies"
+	@echo ""
+	@echo "Phase 2 targets:"
+	@echo "  flink-build        - Build Flink jobs JAR"
+	@echo "  flink-test         - Run Flink job tests"
+	@echo "  deploy-connectors  - Deploy Kafka Connect connectors"
+	@echo "  flink-submit-risk  - Submit Risk Processor job to Flink"
+	@echo "  flink-submit-flow  - Submit Token Flow job to Flink"
+	@echo "  flink-submit-dq    - Submit DQ Monitor job to Flink"
+
+# Phase 2: Flink Jobs
+flink-build:
+	cd $(FLINK_DIR) && sbt clean assembly
+
+flink-test:
+	cd $(FLINK_DIR) && sbt test
+
+flink-clean:
+	cd $(FLINK_DIR) && sbt clean
+
+# Deploy Kafka Connect connectors
+deploy-connectors:
+	./scripts/deploy-connectors.sh
+
+# Submit Flink jobs
+FLINK_JAR := $(FLINK_DIR)/target/scala-2.12/base-data-flink-assembly.jar
+FLINK_JOBMANAGER := localhost:8084
+
+flink-submit-risk: flink-build
+	docker exec base-data-flink-jobmanager flink run -d \
+		-c com.basedata.flink.job.RiskProcessorJob \
+		/opt/flink/usrlib/base-data-flink-assembly.jar
+
+flink-submit-flow: flink-build
+	docker exec base-data-flink-jobmanager flink run -d \
+		-c com.basedata.flink.job.TokenFlowAggregatorJob \
+		/opt/flink/usrlib/base-data-flink-assembly.jar
+
+flink-submit-dq: flink-build
+	docker exec base-data-flink-jobmanager flink run -d \
+		-c com.basedata.flink.job.DQMonitorJob \
+		/opt/flink/usrlib/base-data-flink-assembly.jar
+
+flink-list:
+	docker exec base-data-flink-jobmanager flink list -r
+
+flink-cancel:
+	docker exec base-data-flink-jobmanager flink cancel $(JOB_ID)
