@@ -240,11 +240,6 @@ func (i *Indexer) getUserAccountData(ctx context.Context, address string, blockN
 		big.NewFloat(USDScale),
 	).Float64()
 
-	availableBorrowUSD, _ := new(big.Float).Quo(
-		new(big.Float).SetInt(availableBorrowsBase),
-		big.NewFloat(USDScale),
-	).Float64()
-
 	hf, _ := new(big.Float).Quo(
 		new(big.Float).SetInt(healthFactor),
 		big.NewFloat(HealthFactorScale),
