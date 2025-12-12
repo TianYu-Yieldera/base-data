@@ -1,0 +1,75 @@
+{
+  "type": "record",
+  "name": "RiskAlert",
+  "namespace": "com.basedatahub.schema",
+  "doc": "Risk alert events",
+  "fields": [
+    {
+      "name": "alert_id",
+      "type": "string",
+      "doc": "Unique alert identifier"
+    },
+    {
+      "name": "chain",
+      "type": "string",
+      "doc": "Chain identifier"
+    },
+    {
+      "name": "protocol",
+      "type": "string",
+      "doc": "Protocol identifier"
+    },
+    {
+      "name": "address",
+      "type": "string",
+      "doc": "Address associated with the alert"
+    },
+    {
+      "name": "alert_type",
+      "type": {
+        "type": "enum",
+        "name": "AlertType",
+        "symbols": ["HEALTH_FACTOR_WARNING", "HEALTH_FACTOR_CRITICAL", "LIQUIDATION", "LARGE_TRANSFER", "WHALE_MOVEMENT", "SUSPICIOUS_ACTIVITY"]
+      },
+      "doc": "Type of alert"
+    },
+    {
+      "name": "severity",
+      "type": {
+        "type": "enum",
+        "name": "Severity",
+        "symbols": ["INFO", "WARNING", "CRITICAL"]
+      },
+      "doc": "Alert severity level"
+    },
+    {
+      "name": "current_value",
+      "type": "double",
+      "doc": "Current value that triggered the alert"
+    },
+    {
+      "name": "threshold_value",
+      "type": "double",
+      "doc": "Threshold value for the alert"
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "doc": "Human-readable alert message"
+    },
+    {
+      "name": "details",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Additional alert details in JSON format"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Alert timestamp"
+    }
+  ]
+}

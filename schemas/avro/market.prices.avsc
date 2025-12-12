@@ -1,0 +1,76 @@
+{
+  "type": "record",
+  "name": "AssetPrice",
+  "namespace": "com.basedatahub.schema",
+  "doc": "Asset price data",
+  "fields": [
+    {
+      "name": "price_id",
+      "type": "string",
+      "doc": "Unique price record identifier"
+    },
+    {
+      "name": "chain",
+      "type": "string",
+      "doc": "Chain identifier"
+    },
+    {
+      "name": "asset_address",
+      "type": "string",
+      "doc": "Token contract address"
+    },
+    {
+      "name": "asset_symbol",
+      "type": "string",
+      "doc": "Token symbol"
+    },
+    {
+      "name": "price_usd",
+      "type": "double",
+      "doc": "Price in USD"
+    },
+    {
+      "name": "price_eth",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Price in ETH"
+    },
+    {
+      "name": "source",
+      "type": {
+        "type": "enum",
+        "name": "PriceSource",
+        "symbols": ["CHAINLINK", "PYTH", "DEX_TWAP", "COINGECKO"]
+      },
+      "doc": "Price data source"
+    },
+    {
+      "name": "confidence",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Price confidence score"
+    },
+    {
+      "name": "block_number",
+      "type": ["null", "long"],
+      "default": null,
+      "doc": "Block number of the price reading"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Price timestamp"
+    },
+    {
+      "name": "indexed_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Indexing timestamp"
+    }
+  ]
+}

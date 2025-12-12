@@ -1,0 +1,70 @@
+{
+  "type": "record",
+  "name": "BaseBlock",
+  "namespace": "com.basedatahub.schema",
+  "doc": "Block header data from Base chain",
+  "fields": [
+    {
+      "name": "chain_id",
+      "type": "long",
+      "doc": "Chain identifier"
+    },
+    {
+      "name": "block_number",
+      "type": "long",
+      "doc": "Block height"
+    },
+    {
+      "name": "block_hash",
+      "type": "string",
+      "doc": "Block hash in hex format"
+    },
+    {
+      "name": "parent_hash",
+      "type": "string",
+      "doc": "Parent block hash"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Block timestamp in milliseconds"
+    },
+    {
+      "name": "tx_count",
+      "type": "int",
+      "doc": "Number of transactions in the block"
+    },
+    {
+      "name": "gas_used",
+      "type": "long",
+      "doc": "Total gas used in the block"
+    },
+    {
+      "name": "gas_limit",
+      "type": "long",
+      "doc": "Block gas limit"
+    },
+    {
+      "name": "base_fee_per_gas",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "EIP-1559 base fee in wei"
+    },
+    {
+      "name": "miner",
+      "type": "string",
+      "doc": "Block miner/validator address"
+    },
+    {
+      "name": "indexed_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Timestamp when the block was indexed"
+    }
+  ]
+}

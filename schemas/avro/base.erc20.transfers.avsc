@@ -1,0 +1,94 @@
+{
+  "type": "record",
+  "name": "ERC20Transfer",
+  "namespace": "com.basedatahub.schema",
+  "doc": "ERC20 token transfer events",
+  "fields": [
+    {
+      "name": "transfer_id",
+      "type": "string",
+      "doc": "Unique transfer identifier (tx_hash + log_index)"
+    },
+    {
+      "name": "chain",
+      "type": "string",
+      "default": "base",
+      "doc": "Chain identifier"
+    },
+    {
+      "name": "token_address",
+      "type": "string",
+      "doc": "ERC20 token contract address"
+    },
+    {
+      "name": "token_symbol",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Token symbol"
+    },
+    {
+      "name": "token_decimals",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Token decimals"
+    },
+    {
+      "name": "from_address",
+      "type": "string",
+      "doc": "Sender address"
+    },
+    {
+      "name": "to_address",
+      "type": "string",
+      "doc": "Recipient address"
+    },
+    {
+      "name": "amount_raw",
+      "type": "string",
+      "doc": "Transfer amount in raw token units"
+    },
+    {
+      "name": "amount",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Transfer amount with decimals applied"
+    },
+    {
+      "name": "amount_usd",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Transfer amount in USD"
+    },
+    {
+      "name": "block_number",
+      "type": "long",
+      "doc": "Block number of the transfer"
+    },
+    {
+      "name": "tx_hash",
+      "type": "string",
+      "doc": "Transaction hash"
+    },
+    {
+      "name": "log_index",
+      "type": "int",
+      "doc": "Log index within the transaction"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Block timestamp"
+    },
+    {
+      "name": "indexed_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Indexing timestamp"
+    }
+  ]
+}

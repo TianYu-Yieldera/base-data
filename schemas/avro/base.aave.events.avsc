@@ -1,0 +1,110 @@
+{
+  "type": "record",
+  "name": "AaveEvent",
+  "namespace": "com.basedatahub.schema",
+  "doc": "Aave V3 protocol events",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (tx_hash + log_index)"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "AaveEventType",
+        "symbols": ["SUPPLY", "WITHDRAW", "BORROW", "REPAY", "LIQUIDATION", "FLASH_LOAN"]
+      },
+      "doc": "Type of Aave event"
+    },
+    {
+      "name": "protocol",
+      "type": "string",
+      "default": "aave_v3",
+      "doc": "Protocol identifier"
+    },
+    {
+      "name": "chain",
+      "type": "string",
+      "default": "base",
+      "doc": "Chain identifier"
+    },
+    {
+      "name": "user_address",
+      "type": "string",
+      "doc": "User address involved in the event"
+    },
+    {
+      "name": "reserve_address",
+      "type": "string",
+      "doc": "Reserve token address"
+    },
+    {
+      "name": "amount",
+      "type": "string",
+      "doc": "Amount in raw token units"
+    },
+    {
+      "name": "amount_usd",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Amount in USD"
+    },
+    {
+      "name": "on_behalf_of",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Address on behalf of which the action was performed"
+    },
+    {
+      "name": "liquidator",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Liquidator address for liquidation events"
+    },
+    {
+      "name": "collateral_asset",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Collateral asset address for liquidation events"
+    },
+    {
+      "name": "debt_to_cover",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Debt amount covered in liquidation"
+    },
+    {
+      "name": "block_number",
+      "type": "long",
+      "doc": "Block number of the event"
+    },
+    {
+      "name": "tx_hash",
+      "type": "string",
+      "doc": "Transaction hash"
+    },
+    {
+      "name": "log_index",
+      "type": "int",
+      "doc": "Log index within the transaction"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Block timestamp"
+    },
+    {
+      "name": "indexed_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Indexing timestamp"
+    }
+  ]
+}

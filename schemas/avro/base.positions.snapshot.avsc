@@ -1,0 +1,90 @@
+{
+  "type": "record",
+  "name": "PositionSnapshot",
+  "namespace": "com.basedatahub.schema",
+  "doc": "DeFi position snapshot data",
+  "fields": [
+    {
+      "name": "snapshot_id",
+      "type": "string",
+      "doc": "Unique snapshot identifier"
+    },
+    {
+      "name": "chain",
+      "type": "string",
+      "default": "base",
+      "doc": "Chain identifier"
+    },
+    {
+      "name": "protocol",
+      "type": "string",
+      "doc": "Protocol identifier"
+    },
+    {
+      "name": "user_address",
+      "type": "string",
+      "doc": "User wallet address"
+    },
+    {
+      "name": "total_collateral_eth",
+      "type": "string",
+      "doc": "Total collateral value in ETH"
+    },
+    {
+      "name": "total_collateral_usd",
+      "type": "double",
+      "doc": "Total collateral value in USD"
+    },
+    {
+      "name": "total_debt_eth",
+      "type": "string",
+      "doc": "Total debt value in ETH"
+    },
+    {
+      "name": "total_debt_usd",
+      "type": "double",
+      "doc": "Total debt value in USD"
+    },
+    {
+      "name": "available_borrow_eth",
+      "type": "string",
+      "doc": "Available borrow amount in ETH"
+    },
+    {
+      "name": "health_factor",
+      "type": "double",
+      "doc": "Position health factor"
+    },
+    {
+      "name": "ltv",
+      "type": "double",
+      "doc": "Current loan-to-value ratio"
+    },
+    {
+      "name": "current_liquidation_threshold",
+      "type": "double",
+      "doc": "Current liquidation threshold"
+    },
+    {
+      "name": "block_number",
+      "type": "long",
+      "doc": "Block number of the snapshot"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Snapshot timestamp"
+    },
+    {
+      "name": "indexed_at",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Indexing timestamp"
+    }
+  ]
+}
