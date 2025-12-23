@@ -1,0 +1,173 @@
+version: 2
+
+semantic_models:
+  - name: address_positions
+    description: "User positions with risk metrics"
+    model: ref('core_address_positions')
+
+    defaults:
+      agg_time_dimension: position_timestamp
+
+    entities:
+      - name: position
+        type: primary
+        expr: position_key
+      - name: user
+        type: foreign
+        expr: user_address
+      - name: protocol
+        type: foreign
+        expr: protocol
+
+    dimensions:
+      - name: position_key
+        type: categorical
+        expr: position_key
+      - name: chain
+        type: categorical
+        expr: chain
+      - name: protocol
+        type: categorical
+        expr: protocol
+      - name: user_address
+        type: categorical
+        expr: user_address
+      - name: risk_level
+        type: categorical
+        expr: risk_level
+      - name: position_size_tier
+        type: categorical
+        expr: position_size_tier
+      - name: position_timestamp
+        type: time
+        type_params:
+          time_granularity: day
+        expr: position_timestamp
+
+    measures:
+      - name: total_collateral_usd
+        agg: sum
+        expr: total_collateral_usd
+        description: "Total collateral in USD"
+      - name: total_debt_usd
+        agg: sum
+        expr: total_debt_usd
+        description: "Total debt in USD"
+      - name: avg_health_factor
+        agg: average
+        expr: health_factor
+        description: "Average health factor"
+      - name: min_health_factor
+        agg: min
+        expr: health_factor
+        description: "Minimum health factor"
+      - name: position_count
+        agg: count
+        expr: position_key
+        description: "Number of positions"
+      - name: unique_users
+        agg: count_distinct
+        expr: user_address
+        description: "Unique users count"
+
+  - name: token_transfers
+    description: "Token transfer events"
+    model: ref('stg_base_transfers')
+
+    defaults:
+      agg_time_dimension: event_timestamp
+
+    entities:
+      - name: transfer
+        type: primary
+        expr: transfer_id
+      - name: token
+        type: foreign
+        expr: token_address
+      - name: sender
+        type: foreign
+        expr: from_address
+      - name: receiver
+        type: foreign
+        expr: to_address
+
+    dimensions:
+      - name: transfer_id
+        type: categorical
+        expr: transfer_id
+      - name: token_address
+        type: categorical
+        expr: token_address
+      - name: token_symbol
+        type: categorical
+        expr: token_symbol
+      - name: transfer_type
+        type: categorical
+        expr: transfer_type
+      - name: event_timestamp
+        type: time
+        type_params:
+          time_granularity: hour
+        expr: event_timestamp
+      - name: event_date
+        type: time
+        type_params:
+          time_granularity: day
+        expr: event_date
+
+    measures:
+      - name: transfer_volume_usd
+        agg: sum
+        expr: amount_usd
+        description: "Total transfer volume in USD"
+      - name: transfer_count
+        agg: count
+        expr: transfer_id
+        description: "Number of transfers"
+      - name: avg_transfer_usd
+        agg: average
+        expr: amount_usd
+        description: "Average transfer amount in USD"
+      - name: unique_senders
+        agg: count_distinct
+        expr: from_address
+        description: "Unique sender addresses"
+      - name: unique_receivers
+        agg: count_distinct
+        expr: to_address
+        description: "Unique receiver addresses"
+
+  - name: whale_movements
+    description: "Large transfers involving whale addresses"
+    model: ref('mart_whale_movements')
+
+    defaults:
+      agg_time_dimension: event_timestamp
+
+    entities:
+      - name: movement
+        type: primary
+        expr: movement_id
+
+    dimensions:
+      - name: whale_direction
+        type: categorical
+        expr: whale_direction
+      - name: token_symbol
+        type: categorical
+        expr: token_symbol
+      - name: event_timestamp
+        type: time
+        type_params:
+          time_granularity: hour
+        expr: event_timestamp
+
+    measures:
+      - name: whale_volume_usd
+        agg: sum
+        expr: amount_usd
+        description: "Total whale movement volume in USD"
+      - name: whale_movement_count
+        agg: count
+        expr: movement_id
+        description: "Number of whale movements"

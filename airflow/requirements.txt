@@ -1,0 +1,4 @@
+# Airflow additional requirements
+dbt-core==1.7.0
+dbt-clickhouse==1.7.0
+clickhouse-driver==0.2.6

@@ -1,0 +1,179 @@
+version: 2
+
+metrics:
+  # ============================================
+  # TVL Metrics
+  # ============================================
+  - name: total_tvl_usd
+    label: "Total Value Locked (USD)"
+    description: "Total value locked across all protocols"
+    type: simple
+    type_params:
+      measure: total_collateral_usd
+    filter: null
+
+  - name: total_debt_usd
+    label: "Total Debt (USD)"
+    description: "Total outstanding debt"
+    type: simple
+    type_params:
+      measure: total_debt_usd
+
+  - name: utilization_rate
+    label: "Utilization Rate"
+    description: "Protocol utilization rate (debt/collateral)"
+    type: derived
+    type_params:
+      expr: total_debt_usd / NULLIF(total_tvl_usd, 0)
+      metrics:
+        - total_debt_usd
+        - total_tvl_usd
+
+  # ============================================
+  # Risk Metrics
+  # ============================================
+  - name: avg_health_factor
+    label: "Average Health Factor"
+    description: "Average health factor across all positions"
+    type: simple
+    type_params:
+      measure: avg_health_factor
+
+  - name: min_health_factor
+    label: "Minimum Health Factor"
+    description: "Minimum health factor across all positions"
+    type: simple
+    type_params:
+      measure: min_health_factor
+
+  - name: at_risk_tvl_usd
+    label: "At Risk TVL (USD)"
+    description: "TVL in positions with risk_level in (CRITICAL, LIQUIDATABLE)"
+    type: simple
+    type_params:
+      measure: total_collateral_usd
+    filter: |
+      {{ Dimension('risk_level') }} IN ('CRITICAL', 'LIQUIDATABLE')
+
+  - name: at_risk_ratio
+    label: "At Risk Ratio"
+    description: "Percentage of TVL at risk"
+    type: derived
+    type_params:
+      expr: at_risk_tvl_usd / NULLIF(total_tvl_usd, 0)
+      metrics:
+        - at_risk_tvl_usd
+        - total_tvl_usd
+
+  # ============================================
+  # User Metrics
+  # ============================================
+  - name: total_users
+    label: "Total Users"
+    description: "Total unique users with positions"
+    type: simple
+    type_params:
+      measure: unique_users
+
+  - name: total_positions
+    label: "Total Positions"
+    description: "Total number of active positions"
+    type: simple
+    type_params:
+      measure: position_count
+
+  - name: daily_active_users
+    label: "Daily Active Users"
+    description: "Users with transfer activity in the last 24 hours"
+    type: simple
+    type_params:
+      measure: unique_senders
+    filter: |
+      {{ TimeDimension('event_timestamp', 'day') }} = CURRENT_DATE
+
+  # ============================================
+  # Volume Metrics
+  # ============================================
+  - name: total_transfer_volume_usd
+    label: "Total Transfer Volume (USD)"
+    description: "Total transfer volume"
+    type: simple
+    type_params:
+      measure: transfer_volume_usd
+
+  - name: daily_volume_usd
+    label: "Daily Volume (USD)"
+    description: "Total transfer volume in the last 24 hours"
+    type: simple
+    type_params:
+      measure: transfer_volume_usd
+    filter: |
+      {{ TimeDimension('event_timestamp', 'day') }} = CURRENT_DATE
+
+  - name: weekly_volume_usd
+    label: "Weekly Volume (USD)"
+    description: "Total transfer volume in the last 7 days"
+    type: simple
+    type_params:
+      measure: transfer_volume_usd
+    filter: |
+      {{ TimeDimension('event_timestamp', 'day') }} >= CURRENT_DATE - INTERVAL 7 DAY
+
+  - name: total_transfers
+    label: "Total Transfers"
+    description: "Total number of transfers"
+    type: simple
+    type_params:
+      measure: transfer_count
+
+  - name: avg_transfer_size_usd
+    label: "Average Transfer Size (USD)"
+    description: "Average transfer amount in USD"
+    type: simple
+    type_params:
+      measure: avg_transfer_usd
+
+  # ============================================
+  # Whale Metrics
+  # ============================================
+  - name: whale_positions_count
+    label: "Whale Positions"
+    description: "Number of positions from whale addresses"
+    type: simple
+    type_params:
+      measure: position_count
+    filter: |
+      {{ Dimension('position_size_tier') }} = 'whale'
+
+  - name: whale_tvl_usd
+    label: "Whale TVL (USD)"
+    description: "Total value locked by whale addresses"
+    type: simple
+    type_params:
+      measure: total_collateral_usd
+    filter: |
+      {{ Dimension('position_size_tier') }} = 'whale'
+
+  - name: whale_tvl_share
+    label: "Whale TVL Share"
+    description: "Percentage of TVL held by whales"
+    type: derived
+    type_params:
+      expr: whale_tvl_usd / NULLIF(total_tvl_usd, 0)
+      metrics:
+        - whale_tvl_usd
+        - total_tvl_usd
+
+  - name: whale_movement_volume_usd
+    label: "Whale Movement Volume (USD)"
+    description: "Total whale movement volume"
+    type: simple
+    type_params:
+      measure: whale_volume_usd
+
+  - name: whale_movement_count
+    label: "Whale Movement Count"
+    description: "Number of whale movements"
+    type: simple
+    type_params:
+      measure: whale_movement_count
