@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: mart_risk_dashboard
+    description: "Dashboard view for risk monitoring"
+    tags: ['mart', 'dashboard']
+
+  - name: mart_whale_movements
+    description: "Tracked whale movements for large transfers"
+    columns:
+      - name: movement_id
+        description: "Primary key: transfer_id"
+        tests:
+          - unique
+          - not_null
+    tags: ['mart', 'whales']
+
+  - name: mart_ecosystem_kpis
+    description: "Key performance indicators for the ecosystem"
+    tags: ['mart', 'kpis']
+
+  - name: mart_protocol_summary
+    description: "Protocol-level summary metrics"
+    columns:
+      - name: protocol
+        description: "Protocol identifier"
+        tests:
+          - unique
+          - not_null
+    tags: ['mart', 'protocols']

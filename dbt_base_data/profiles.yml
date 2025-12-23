@@ -1,0 +1,32 @@
+# profiles.yml - Local Development
+# Note: In production, use environment variables or ~/.dbt/profiles.yml
+base_data:
+  target: dev
+  outputs:
+    dev:
+      type: clickhouse
+      host: localhost
+      port: 8123
+      user: default
+      password: ''
+      database: base_data
+      schema: default
+      secure: false
+      verify: false
+      connect_timeout: 10
+      send_receive_timeout: 300
+      sync_request_timeout: 5
+      compress_block_size: 1048576
+      compression: lz4
+      check_exchange: false
+
+    prod:
+      type: clickhouse
+      host: "{{ env_var('CLICKHOUSE_HOST') }}"
+      port: "{{ env_var('CLICKHOUSE_PORT', '8123') | int }}"
+      user: "{{ env_var('CLICKHOUSE_USER') }}"
+      password: "{{ env_var('CLICKHOUSE_PASSWORD') }}"
+      database: base_data
+      schema: default
+      secure: true
+      verify: true

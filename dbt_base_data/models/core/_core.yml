@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: core_address_positions
+    description: "Enriched address positions with risk level"
+    columns:
+      - name: position_key
+        description: "Primary key: chain-protocol-address"
+        tests:
+          - unique
+          - not_null
+      - name: health_factor
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1000
+      - name: risk_level
+        tests:
+          - accepted_values:
+              values: ['SAFE', 'WARNING', 'DANGER', 'CRITICAL', 'LIQUIDATABLE']
+
+  - name: core_address_netflow_daily
+    description: "Daily net flow per address per token"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - event_date
+            - address
+            - token_address
+
+  - name: core_cdp_metrics_daily
+    description: "Daily CDP metrics aggregated by protocol"
+    columns:
+      - name: metrics_key
+        description: "Primary key: date-protocol"
+        tests:
+          - unique
+          - not_null
+
+  - name: core_token_metrics_daily
+    description: "Daily token metrics including volume and price"
+    columns:
+      - name: metrics_key
+        description: "Primary key: date-token_address"
+        tests:
+          - unique
+          - not_null
+
+  - name: core_whale_addresses
+    description: "Identified whale addresses by position size and transfer volume"
+    columns:
+      - name: address
+        description: "Whale wallet address"
+        tests:
+          - unique
+          - not_null

@@ -1,0 +1,87 @@
+# dbt_project.yml
+name: 'base_data'
+version: '1.0.0'
+config-version: 2
+
+profile: 'base_data'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Model configurations
+models:
+  base_data:
+    # Staging layer - lightweight views
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ['staging']
+
+    # Core layer - incremental with ClickHouse optimizations
+    core:
+      +materialized: incremental
+      +schema: core
+      +tags: ['core']
+      +incremental_strategy: delete+insert
+      +order_by: ['block_number']
+
+    # Mart layer - pre-computed tables
+    mart:
+      +materialized: table
+      +schema: mart
+      +tags: ['mart']
+
+# Seed configurations
+seeds:
+  base_data:
+    +schema: seeds
+    token_metadata:
+      +column_types:
+        token_address: String
+        token_symbol: String
+        token_decimals: UInt8
+        coingecko_id: Nullable(String)
+    protocol_contracts:
+      +column_types:
+        contract_address: String
+        protocol_name: String
+        contract_type: String
+    known_addresses:
+      +column_types:
+        address: String
+        label_type: String
+        label_name: String
+
+# Test configurations
+tests:
+  base_data:
+    +severity: warn
+    +store_failures: true
+
+# Variable definitions
+vars:
+  # Risk thresholds
+  health_factor_safe: 2.0
+  health_factor_warning: 1.5
+  health_factor_danger: 1.2
+  health_factor_critical: 1.0
+
+  # Whale thresholds
+  whale_collateral_usd: 1000000
+  whale_transfer_volume_usd: 1000000
+
+  # Data retention
+  lookback_days: 90
+
+  # Chain configuration
+  chain_name: 'base'
+  chain_id: 8453

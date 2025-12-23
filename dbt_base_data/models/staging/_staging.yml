@@ -1,0 +1,55 @@
+version: 2
+
+sources:
+  - name: clickhouse_raw
+    description: "Raw data from Kafka Connect"
+    database: base_data
+    schema: default
+
+    tables:
+      - name: raw_blocks
+        description: "Raw block data from Base chain"
+        columns:
+          - name: block_number
+            description: "Block number"
+            tests:
+              - unique
+              - not_null
+          - name: block_hash
+            description: "Block hash (0x prefixed)"
+          - name: timestamp
+            description: "Block timestamp (Unix ms)"
+
+      - name: raw_aave_events
+        description: "Aave V3 protocol events"
+        columns:
+          - name: event_type
+            description: "Event type: supply, withdraw, borrow, repay, liquidation"
+            tests:
+              - accepted_values:
+                  values: ['supply', 'withdraw', 'borrow', 'repay', 'liquidation']
+          - name: user_address
+            description: "User wallet address"
+            tests:
+              - not_null
+
+      - name: raw_transfers
+        description: "ERC20 transfer events"
+
+      - name: raw_positions
+        description: "User position snapshots"
+
+      - name: raw_prices
+        description: "Token price data"
+
+  - name: clickhouse_rt
+    description: "Real-time metrics from Flink"
+    database: base_data
+    schema: default
+
+    tables:
+      - name: rt_cdp_risk_metrics
+        description: "Real-time CDP risk metrics"
+
+      - name: rt_token_flow_hourly
+        description: "Hourly token flow aggregates"

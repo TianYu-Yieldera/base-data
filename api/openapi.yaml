@@ -1,0 +1,446 @@
+openapi: 3.0.3
+info:
+  title: Base Data Hub API
+  version: 1.0.0
+  description: API for Base chain DeFi analytics
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  clickhouse:
+                    type: string
+
+  /address/{address}/risk:
+    get:
+      summary: Get address risk information
+      tags: [Address]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+          description: Ethereum address (0x prefixed)
+      responses:
+        '200':
+          description: Risk information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressRisk'
+        '400':
+          description: Invalid address format
+        '404':
+          description: Address not found
+
+  /address/{address}/flow:
+    get:
+      summary: Get address flow history
+      tags: [Address]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 90
+        - name: token
+          in: query
+          schema:
+            type: string
+          description: Filter by token address
+      responses:
+        '200':
+          description: Flow history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressFlow'
+
+  /address/{address}/positions:
+    get:
+      summary: Get address positions
+      tags: [Address]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Position information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressRisk'
+
+  /address/{address}/labels:
+    get:
+      summary: Get address labels
+      tags: [Address]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address labels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddressLabel'
+
+  /risk/high-risk:
+    get:
+      summary: List high risk addresses
+      tags: [Risk]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: risk_level
+          in: query
+          schema:
+            type: string
+            enum: [CRITICAL, LIQUIDATABLE, DANGER]
+            default: CRITICAL
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - name: min_collateral_usd
+          in: query
+          schema:
+            type: number
+            default: 1000
+      responses:
+        '200':
+          description: High risk addresses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighRiskList'
+
+  /risk/distribution:
+    get:
+      summary: Get risk distribution
+      tags: [Risk]
+      responses:
+        '200':
+          description: Risk distribution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskDistribution'
+
+  /whales/movements:
+    get:
+      summary: Recent whale movements
+      tags: [Whales]
+      parameters:
+        - name: hours
+          in: query
+          schema:
+            type: integer
+            default: 24
+            maximum: 168
+        - name: min_usd
+          in: query
+          schema:
+            type: number
+            default: 100000
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [in, out, all]
+            default: all
+      responses:
+        '200':
+          description: Whale movements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhaleMovements'
+
+  /whales/list:
+    get:
+      summary: List known whale addresses
+      tags: [Whales]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+      responses:
+        '200':
+          description: Whale list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_count:
+                    type: integer
+                  whales:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WhaleAddress'
+
+  /ecosystem/stats:
+    get:
+      summary: Ecosystem statistics
+      tags: [Ecosystem]
+      responses:
+        '200':
+          description: Ecosystem stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EcosystemStats'
+
+  /ecosystem/tvl:
+    get:
+      summary: TVL history
+      tags: [Ecosystem]
+      responses:
+        '200':
+          description: TVL history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period_days:
+                    type: integer
+                  data_points:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        tvl_usd:
+                          type: string
+
+components:
+  schemas:
+    AddressRisk:
+      type: object
+      properties:
+        address:
+          type: string
+        chain:
+          type: string
+        protocol:
+          type: string
+        health_factor:
+          type: number
+        risk_level:
+          type: string
+          enum: [SAFE, WARNING, DANGER, CRITICAL, LIQUIDATABLE]
+        total_collateral_usd:
+          type: string
+        total_debt_usd:
+          type: string
+        available_borrow_usd:
+          type: string
+        ltv:
+          type: number
+        liquidation_threshold:
+          type: number
+        position_size_tier:
+          type: string
+        utilization_rate:
+          type: number
+        updated_at:
+          type: string
+          format: date-time
+
+    AddressFlow:
+      type: object
+      properties:
+        address:
+          type: string
+        period_days:
+          type: integer
+        total_inflow_usd:
+          type: string
+        total_outflow_usd:
+          type: string
+        net_flow_usd:
+          type: string
+        daily_flows:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyFlow'
+
+    DailyFlow:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        inflow_usd:
+          type: string
+        outflow_usd:
+          type: string
+        net_usd:
+          type: string
+
+    AddressLabel:
+      type: object
+      properties:
+        address:
+          type: string
+        label_type:
+          type: string
+        label_name:
+          type: string
+        source:
+          type: string
+        confidence:
+          type: number
+
+    HighRiskList:
+      type: object
+      properties:
+        total_count:
+          type: integer
+        risk_level:
+          type: string
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddressRisk'
+
+    RiskDistribution:
+      type: object
+      properties:
+        safe:
+          type: integer
+        warning:
+          type: integer
+        danger:
+          type: integer
+        critical:
+          type: integer
+        liquidatable:
+          type: integer
+
+    WhaleMovement:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        from_address:
+          type: string
+        to_address:
+          type: string
+        token_symbol:
+          type: string
+        amount:
+          type: string
+        amount_usd:
+          type: string
+        direction:
+          type: string
+          enum: [whale_in, whale_out]
+        tx_hash:
+          type: string
+
+    WhaleMovements:
+      type: object
+      properties:
+        period_hours:
+          type: integer
+        total_movements:
+          type: integer
+        total_volume_usd:
+          type: string
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhaleMovement'
+
+    WhaleAddress:
+      type: object
+      properties:
+        address:
+          type: string
+        whale_types:
+          type: array
+          items:
+            type: string
+        max_whale_value_usd:
+          type: string
+        is_position_whale:
+          type: boolean
+        is_transfer_whale:
+          type: boolean
+
+    EcosystemStats:
+      type: object
+      properties:
+        snapshot_time:
+          type: string
+          format: date-time
+        total_tvl_usd:
+          type: string
+        total_debt_usd:
+          type: string
+        total_users:
+          type: integer
+        active_users_24h:
+          type: integer
+        volume_24h_usd:
+          type: string
+        avg_health_factor:
+          type: number
+        risk_distribution:
+          $ref: '#/components/schemas/RiskDistribution'
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
