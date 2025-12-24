@@ -284,7 +284,7 @@ func (r *ClickHouseRepo) GetWhaleMovements(ctx context.Context, hours int, minUS
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan movement row: %w", err)
 		}
-		fmt.Sscanf(m.AmountUSD, "%f", &amountUSDFloat)
+		_, _ = fmt.Sscanf(m.AmountUSD, "%f", &amountUSDFloat)
 		totalVolume += amountUSDFloat
 		movements = append(movements, m)
 	}
